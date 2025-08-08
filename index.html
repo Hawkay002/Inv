@@ -12,6 +12,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
+    <!-- Cropper.js for image cropping -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
     <style>
         :root {
             --bg-primary: #f8f8f8;
@@ -925,6 +928,98 @@
             margin-right: 8px;
             font-size: 1.2rem;
         }
+        
+        /* Image Upload Section */
+        .upload-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .image-upload-container {
+            margin-top: 15px;
+        }
+        
+        #imageUpload {
+            display: none;
+        }
+        
+        #uploadedImage {
+            max-width: 100%;
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .crop-container {
+            position: relative;
+            max-width: 100%;
+            margin: 15px 0;
+        }
+        
+        .crop-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .crop-btn {
+            padding: 10px 15px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .crop-btn-secondary {
+            background: #6c757d;
+        }
+        
+        .cropper-area {
+            background: rgba(0, 123, 255, 0.2);
+            border: 1px dashed #007bff;
+            position: absolute;
+            z-index: 10;
+            cursor: move;
+        }
+        
+        .crop-handle {
+            width: 12px;
+            height: 12px;
+            background: #007bff;
+            border: 1px solid white;
+            position: absolute;
+        }
+        
+        .crop-handle-nw {
+            top: -6px;
+            left: -6px;
+            cursor: nw-resize;
+        }
+        
+        .crop-handle-ne {
+            top: -6px;
+            right: -6px;
+            cursor: ne-resize;
+        }
+        
+        .crop-handle-sw {
+            bottom: -6px;
+            left: -6px;
+            cursor: sw-resize;
+        }
+        
+        .crop-handle-se {
+            bottom: -6px;
+            right: -6px;
+            cursor: se-resize;
+        }
 
         @media (max-width: 768px) {
             .settings-group {
@@ -979,6 +1074,10 @@
             
             #camera-feed {
                 height: 250px;
+            }
+            
+            .crop-controls {
+                flex-direction: column;
             }
         }
         
@@ -1124,6 +1223,34 @@
                 </div>
                 
                 <div id="scan-result"></div>
+                
+                <!-- Image Upload Section -->
+                <div class="upload-section">
+                    <h3><i class="fas fa-upload"></i> Or Upload Bill Image</h3>
+                    <p>Upload an image of your bill and select the barcode area</p>
+                    
+                    <div class="image-upload-container">
+                        <input type="file" id="imageUpload" accept="image/*">
+                        <button id="uploadImageBtn" class="btn btn-secondary">
+                            <i class="fas fa-upload"></i> Choose Image
+                        </button>
+                    </div>
+                    
+                    <div id="imagePreview" style="display: none; margin-top: 20px;">
+                        <div class="crop-container">
+                            <img id="uploadedImage" src="">
+                        </div>
+                        
+                        <div class="crop-controls">
+                            <button id="scanCroppedBtn" class="crop-btn">
+                                <i class="fas fa-search"></i> Scan Selected Area
+                            </button>
+                            <button id="resetImageBtn" class="crop-btn crop-btn-secondary">
+                                <i class="fas fa-redo"></i> Choose Another Image
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1243,10 +1370,10 @@
                             <path d="M15.85 8.167a.204.204 0 0 0-.04.004c-.68.19-.543 1.148-1.781 1.23h-.12a.23.23 0 0 0-.052.005h-.001a.24.24 0 0 0-.184.235v1.09c0 .134.106.241.237.241h.645v4.623c0 .132.104.238.233.238h1.058a.236.236 0 0 0 .233-.238v-4.623h.6c.13 0 .236-.107.236-.241v-1.09a.239.239 0 0 0-.236-.24h-.612V8.386a.218.218 0 0 0-.216-.22zm4.225 1.17c-.398 0-.762.15-1.042.395v-.124a.238.238 0 0 0-.234-.224h-1.07a.24.24 0 0 0-.236.242v5.92a.24.24 0 0 0 .236.242h1.07c.12 0 .217-.091.233-.209v-4.25a.393.393 0 0 1 .371-.408h.196a.41.41 0 0 1 .226.09.405.405 0 0 1 .145.319v4.074l.004.155a.24.24 0 0 0 .237.241h1.07a.239.239 0 0 0 .235-.23l-.001-4.246c0-.14.062-.266.174-.34a.419.419 0 0 1 .196-.068h.198c.23.02.37.2.37.408.005 1.396.004 2.8.004 4.224a.24.24 0 0 0 .237.241h1.07c.13 0 .236-.108.236-.241v-4.543c0-.31-.034-.442-.08-.577a1.601 1.601 0 0 0-1.51-1.09h-.015a1.58 1.58 0 0 0-1.152.5c-.291-.308-.7-.5-1.153-.5zM.232 9.4A.234.234 0 0 0 0 9.636v5.924c0 .132.096.238.216.241h1.09c.13 0 .237-.107.237-.24l.004-1.658H2.57c.857 0 1.453-.605 1.453-1.481v-1.538c0-.877-.596-1.484-1.453-1.484H.232zm9.032 0a.239.239 0 0 0-.237.241v2.47c0 .94.657 1.608 1.579 1.608h.675s.016 0 .037.004a.253.253 0 0 1 .222.253c0 .13-.096.235-.219.251l-.018.004-.303.006H9.739a.239.239 0 0 0-.236.24v1.09a.24.24 0 0 0 .236.242h1.75c.92 0 1.577-.669 1.577-1.608v-4.56a.239.239 0 0 0-.236-.24h-1.07a.239.239 0 0 0-.236.24c-.005.787 0 1.525 0 2.255a.253.253 0 0 1-.25.25h-.449a.253.253 0 0 1-.25-.255c.005-.754-.005-1.5-.005-2.25a.239.239 0 0 0-.236-.24zm-4.004.006a.232.232 0 0 0-.238.226v1.023c0 .132.113.24.252.24h1.413c.112.017.2.1.213.23v.14c-.013.124-.1.214-.207.224h-.7c-.93 0-1.594.63-1.594 1.515v1.269c0 .88.57 1.506 1.495 1.506h1.94c.348 0 .63-.27.63-.6v-4.136c0-1.004-.508-1.637-1.72-1.637zm-3.713 1.572h.678c.139 0 .25.115.25.256v.836a.253.253 0 0 1-.25.256h-.1c-.192.002-.386 0-.578 0zm4.67 1.977h.445c.139 0 .252.108.252.24v.932a.23.23 0 0 1-.014.076.25.25 0 0 1-.238.164h-.445a.247.247 0 0 1-.252-.24v-.933c0-.132.113-.239.252-.239Z" />
                         </svg>
                         <svg class="upi-icon" viewBox="0 0 24 24">
-                            <path d="M10.206 9.941h2.949v4.692c-.402.201-.938.268-1.34.268-1.072 0-1.609-.536-1.609-1.743V9.941zm13.47 4.816c-1.523 6.449-7.985 10.442-14.433 8.919C2.794 22.154-1.199 15.691.324 9.243 1.847 2.794 8.309-1.199 14.757.324c6.449 1.523 10.442 7.985 8.919 14.433zm-6.231-5.888a.887.887 0 0 0-.871-.871h-1.609l-3.686-4.222c-.335-.402-.871-.536-1.407-.402l-1.274.401c-.201.067-.268.335-.134.469l4.021 3.82H6.386c-.201 0-.335.134-.335.335v.67c0 .469.402.871.871.871h.938v3.217c0 2.413 1.273 3.82 3.418 3.82.67 0 1.206-.067 1.877-.335v2.145c0 .603.469 1.072 1.072 1.072h.938a.432.432 0 0 0 .402-.402V9.874h1.542c.201 0 .335-.134.335-.335v-.67z" />
+                            <path d="M 13.283203 1.7246094 C 11.272645 1.7713212 9.3283181 2.8321981 8.2539062 4.6933594 L 8.0175781 5.0898438 L 7.8847656 5.0136719 C 7.1352305 4.5822534 6.2739566 4.4961243 5.4921875 4.7050781 C 4.7104184 4.9140319 4.0071518 5.4172959 3.5742188 6.1660156 L 0.79882812 10.962891 C -0.83938764 13.792318 0.14160377 17.441752 2.9765625 19.074219 L 4.7382812 20.087891 L 6.8730469 21.320312 L 7.7324219 21.814453 L 7.7324219 21.816406 C 7.743369 21.822726 7.7546485 21.827758 7.765625 21.833984 L 7.8007812 21.853516 L 7.8027344 21.851562 C 10.155083 23.160269 13.158663 22.340653 14.509766 20.001953 L 14.509766 20 L 15.236328 18.744141 L 15.765625 19.050781 L 15.767578 19.052734 C 17.267018 19.917237 19.212959 19.395621 20.078125 17.896484 L 23.333984 12.259766 C 24.692459 9.9065216 23.885663 6.8719436 21.544922 5.5 L 21.546875 5.4980469 C 21.541198 5.4947667 21.534982 5.4934865 21.529297 5.4902344 C 21.525192 5.4878489 21.521693 5.4847971 21.517578 5.4824219 L 18.521484 3.7519531 L 16.380859 2.515625 C 15.67214 2.1063222 14.913385 1.8617949 14.146484 1.7675781 C 13.858897 1.7322468 13.570426 1.7179363 13.283203 1.7246094 z M 13.128906 3.7226562 C 13.886567 3.6702474 14.668689 3.836751 15.380859 4.2480469 L 17.316406 5.3652344 C 16.542959 5.7440937 15.870516 6.3458944 15.410156 7.1425781 L 10.753906 15.205078 C 10.339891 15.921736 9.4543502 16.157816 8.7382812 15.744141 L 8.4902344 15.599609 L 8.7226562 15.197266 L 11.355469 10.650391 C 12.220664 9.1545054 11.695874 7.2091107 10.197266 6.3457031 L 9.75 6.0878906 L 9.9824219 5.6972656 L 9.9863281 5.6933594 C 10.671826 4.5058962 11.866138 3.8100043 13.128906 3.7226562 z M 6.4472656 6.5957031 C 6.5966747 6.6151283 6.7454863 6.6648029 6.8867188 6.7460938 L 9.1992188 8.0800781 C 9.7626106 8.4046706 9.9458515 9.0903224 9.6230469 9.6484375 L 6.9921875 14.195312 L 6.2734375 15.4375 C 5.7434398 16.352759 5.62087 17.36909 5.7285156 18.351562 L 3.9746094 17.341797 C 2.0755681 16.248264 1.4335126 13.857416 2.5292969 11.964844 L 5.3046875 7.1679688 L 5.3066406 7.1679688 C 5.4687105 6.8876885 5.7218785 6.7007962 6.0058594 6.625 C 6.1478498 6.587102 6.2978565 6.5762779 6.4472656 6.5957031 z M 19.123047 6.8964844 C 19.595183 6.8641365 20.082614 6.9703639 20.529297 7.2246094 C 21.946227 8.0521329 22.422962 9.8369585 21.601562 11.259766 L 18.345703 16.896484 C 18.021576 17.458123 17.333405 17.642885 16.769531 17.320312 L 16.236328 17.009766 L 19.089844 12.068359 L 19.089844 12.066406 C 19.957449 10.567154 19.436737 8.6197447 17.9375 7.7539062 L 17.935547 7.7519531 L 17.613281 7.5683594 C 18.034068 7.1744017 18.563456 6.9348241 19.123047 6.8964844 z M 16.507812 9.2421875 L 16.9375 9.4863281 C 17.501708 9.8121689 17.686466 10.501929 17.359375 11.066406 L 17.357422 11.066406 L 12.777344 19.001953 C 11.967955 20.403957 10.224853 20.883097 8.8105469 20.119141 C 7.926484 19.500143 7.499338 18.454288 7.65625 17.429688 L 7.7382812 17.476562 C 9.3902124 18.430889 11.532343 17.85642 12.486328 16.205078 L 16.507812 9.2421875 z" />
                         </svg>
                         <svg class="upi-icon" viewBox="0 0 24 24">
-                            <path d="M 13.283203 1.7246094 C 11.272645 1.7713212 9.3283181 2.8321981 8.2539062 4.6933594 L 8.0175781 5.0898438 L 7.8847656 5.0136719 C 7.1352305 4.5822534 6.2739566 4.4961243 5.4921875 4.7050781 C 4.7104184 4.9140319 4.0071518 5.4172959 3.5742188 6.1660156 L 0.79882812 10.962891 C -0.83938764 13.792318 0.14160377 17.441752 2.9765625 19.074219 L 4.7382812 20.087891 L 6.8730469 21.320312 L 7.7324219 21.814453 L 7.7324219 21.816406 C 7.743369 21.822726 7.7546485 21.827758 7.765625 21.833984 L 7.8007812 21.853516 L 7.8027344 21.851562 C 10.155083 23.160269 13.158663 22.340653 14.509766 20.001953 L 14.509766 20 L 15.236328 18.744141 L 15.765625 19.050781 L 15.767578 19.052734 C 17.267018 19.917237 19.212959 19.395621 20.078125 17.896484 L 23.333984 12.259766 C 24.692459 9.9065216 23.885663 6.8719436 21.544922 5.5 L 21.546875 5.4980469 C 21.541198 5.4947667 21.534982 5.4934865 21.529297 5.4902344 C 21.525192 5.4878489 21.521693 5.4847971 21.517578 5.4824219 L 18.521484 3.7519531 L 16.380859 2.515625 C 15.67214 2.1063222 14.913385 1.8617949 14.146484 1.7675781 C 13.858897 1.7322468 13.570426 1.7179363 13.283203 1.7246094 z M 13.128906 3.7226562 C 13.886567 3.6702474 14.668689 3.836751 15.380859 4.2480469 L 17.316406 5.3652344 C 16.542959 5.7440937 15.870516 6.3458944 15.410156 7.1425781 L 10.753906 15.205078 C 10.339891 15.921736 9.4543502 16.157816 8.7382812 15.744141 L 8.4902344 15.599609 L 8.7226562 15.197266 L 11.355469 10.650391 C 12.220664 9.1545054 11.695874 7.2091107 10.197266 6.3457031 L 9.75 6.0878906 L 9.9824219 5.6972656 L 9.9863281 5.6933594 C 10.671826 4.5058962 11.866138 3.8100043 13.128906 3.7226562 z M 6.4472656 6.5957031 C 6.5966747 6.6151283 6.7454863 6.6648029 6.8867188 6.7460938 L 9.1992188 8.0800781 C 9.7626106 8.4046706 9.9458515 9.0903224 9.6230469 9.6484375 L 6.9921875 14.195312 L 6.2734375 15.4375 C 5.7434398 16.352759 5.62087 17.36909 5.7285156 18.351562 L 3.9746094 17.341797 C 2.0755681 16.248264 1.4335126 13.857416 2.5292969 11.964844 L 5.3046875 7.1679688 L 5.3066406 7.1679688 C 5.4687105 6.8876885 5.7218785 6.7007962 6.0058594 6.625 C 6.1478498 6.587102 6.2978565 6.5762779 6.4472656 6.5957031 z M 19.123047 6.8964844 C 19.595183 6.8641365 20.082614 6.9703639 20.529297 7.2246094 C 21.946227 8.0521329 22.422962 9.8369585 21.601562 11.259766 L 18.345703 16.896484 C 18.021576 17.458123 17.333405 17.642885 16.769531 17.320312 L 16.236328 17.009766 L 19.089844 12.068359 L 19.089844 12.066406 C 19.957449 10.567154 19.436737 8.6197447 17.9375 7.7539062 L 17.935547 7.7519531 L 17.613281 7.5683594 C 18.034068 7.1744017 18.563456 6.9348241 19.123047 6.8964844 z M 16.507812 9.2421875 L 16.9375 9.4863281 C 17.501708 9.8121689 17.686466 10.501929 17.359375 11.066406 L 17.357422 11.066406 L 12.777344 19.001953 C 11.967955 20.403957 10.224853 20.883097 8.8105469 20.119141 C 7.926484 19.500143 7.499338 18.454288 7.65625 17.429688 L 7.7382812 17.476562 C 9.3902124 18.430889 11.532343 17.85642 12.486328 16.205078 L 16.507812 9.2421875 z" />
+                            <path d="M 10.206 9.941h2.949v4.692c-.402.201-.938.268-1.34.268-1.072 0-1.609-.536-1.609-1.743V9.941zm13.47 4.816c-1.523 6.449-7.985 10.442-14.433 8.919C2.794 22.154-1.199 15.691.324 9.243 1.847 2.794 8.309-1.199 14.757.324c6.449 1.523 10.442 7.985 8.919 14.433zm-6.231-5.888a.887.887 0 0 0-.871-.871h-1.609l-3.686-4.222c-.335-.402-.871-.536-1.407-.402l-1.274.401c-.201.067-.268.335-.134.469l4.021 3.82H6.386c-.201 0-.335.134-.335.335v.67c0 .469.402.871.871.871h.938v3.217c0 2.413 1.273 3.82 3.418 3.82.67 0 1.206-.067 1.877-.335v2.145c0 .603.469 1.072 1.072 1.072h.938a.432.432 0 0 0 .402-.402V9.874h1.542c.201 0 .335-.134.335-.335v-.67z" />
                         </svg>
                     </div>
                 </div>
@@ -1489,6 +1616,12 @@
         const scanResult = document.getElementById('scan-result');
         const cameraFeed = document.getElementById('camera-feed');
         const scanSound = document.getElementById('scanSound');
+        const uploadImageBtn = document.getElementById('uploadImageBtn');
+        const imageUpload = document.getElementById('imageUpload');
+        const imagePreview = document.getElementById('imagePreview');
+        const uploadedImage = document.getElementById('uploadedImage');
+        const scanCroppedBtn = document.getElementById('scanCroppedBtn');
+        const resetImageBtn = document.getElementById('resetImageBtn');
         
         // Application settings and bill data
         let settings = JSON.parse(localStorage.getItem('rentSettings')) || {
@@ -1508,6 +1641,8 @@
         let prevAC = 1018;
         let currentBill = null;
         let scannerActive = false;
+        let cropper = null;
+        let cropArea = null;
         
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
@@ -1543,6 +1678,12 @@
             // Scan buttons
             startScanBtn.addEventListener('click', startScanning);
             stopScanBtn.addEventListener('click', stopScanning);
+            
+            // Image upload handling
+            uploadImageBtn.addEventListener('click', () => imageUpload.click());
+            imageUpload.addEventListener('change', handleImageUpload);
+            scanCroppedBtn.addEventListener('click', scanCroppedArea);
+            resetImageBtn.addEventListener('click', resetImageUpload);
         });
         
         // Tab switching
@@ -2518,6 +2659,162 @@
                 cameraFeed.removeChild(cameraFeed.firstChild);
             }
             cameraFeed.innerHTML = '<div id="scanning-info" class="scan-info"><i class="fas fa-info-circle scan-icon"></i> Camera access required for scanning</div>';
+        }
+        
+        // Handle image upload
+        function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            // Stop live scanning if active
+            if (scannerActive) {
+                stopScanning();
+            }
+            
+            // Create a URL for the image
+            const imageUrl = URL.createObjectURL(file);
+            
+            // Set the image source
+            uploadedImage.src = imageUrl;
+            
+            // Show the preview container
+            imagePreview.style.display = 'block';
+            
+            // Initialize Cropper.js when image is loaded
+            uploadedImage.onload = function() {
+                // Remove any existing cropper instance
+                if (cropper) {
+                    cropper.destroy();
+                }
+                
+                // Initialize cropper
+                cropper = new Cropper(uploadedImage, {
+                    aspectRatio: NaN, // Free aspect ratio
+                    viewMode: 1,
+                    autoCropArea: 0.5,
+                    movable: true,
+                    zoomable: true,
+                    rotatable: false,
+                    scalable: true,
+                    cropBoxMovable: true,
+                    cropBoxResizable: true,
+                    guides: true,
+                    center: true,
+                    background: true,
+                    responsive: true,
+                    restore: true,
+                    checkCrossOrigin: false,
+                    toggleDragModeOnDblclick: false,
+                    minCropBoxWidth: 100,
+                    minCropBoxHeight: 50,
+                    ready: function() {
+                        // Adjust the crop box to cover the entire image initially
+                        const container = this.cropper.getContainerData();
+                        const canvas = this.cropper.getCanvasData();
+                        this.cropper.setCropBoxData({
+                            width: canvas.width,
+                            height: canvas.height,
+                            left: 0,
+                            top: 0
+                        });
+                    }
+                });
+            };
+        }
+        
+        // Scan the cropped area
+        function scanCroppedArea() {
+            if (!cropper) {
+                alert('Please upload an image first');
+                return;
+            }
+            
+            // Get the cropped canvas
+            const canvas = cropper.getCroppedCanvas();
+            
+            // Show loading
+            scanResult.innerHTML = '<div class="scan-info"><i class="fas fa-spinner fa-spin scan-icon"></i> Scanning barcode...</div>';
+            
+            // Convert canvas to image data
+            const imageData = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
+            
+            // Use Quagga to decode from image data
+            Quagga.decodeSingle({
+                decoder: {
+                    readers: ['code_128_reader'] // Only scan CODE128 barcodes
+                },
+                locate: true,
+                src: canvas.toDataURL('image/png')
+            }, function(result) {
+                if (result && result.codeResult) {
+                    const code = result.codeResult.code;
+                    console.log('Barcode detected from image:', code);
+                    
+                    // Play scanning sound
+                    playScanSound();
+                    
+                    // Try to parse as bill ID
+                    const billId = parseInt(code);
+                    
+                    if (isNaN(billId)) {
+                        scanResult.innerHTML = `<div class="scan-error"><i class="fas fa-exclamation-circle scan-icon"></i> Invalid bill ID: ${code}</div>`;
+                        return;
+                    }
+                    
+                    // Find the bill
+                    const bill = bills.find(b => b.id === billId);
+                    
+                    if (!bill) {
+                        scanResult.innerHTML = `<div class="scan-error"><i class="fas fa-exclamation-circle scan-icon"></i> Bill not found: ${billId}</div>`;
+                        return;
+                    }
+                    
+                    if (bill.status === 'paid') {
+                        scanResult.innerHTML = `<div class="scan-info"><i class="fas fa-info-circle scan-icon"></i> Bill already paid</div>`;
+                        return;
+                    }
+                    
+                    // Mark bill as paid
+                    bill.status = 'paid';
+                    bill.paidDate = new Date().toISOString();
+                    
+                    // Update in storage
+                    const index = bills.findIndex(b => b.id === billId);
+                    if (index !== -1) {
+                        bills[index] = bill;
+                        localStorage.setItem('rentBills', JSON.stringify(bills));
+                        
+                        // Update UI
+                        loadPreviousBills();
+                        
+                        // Show success
+                        scanResult.innerHTML = `<div class="scan-success"><i class="fas fa-check-circle scan-icon"></i> Bill marked as paid! Amount: ₹${bill.total.toFixed(2)}</div>`;
+                        
+                        // Reset image upload
+                        resetImageUpload();
+                    }
+                } else {
+                    scanResult.innerHTML = `<div class="scan-error"><i class="fas fa-exclamation-circle scan-icon"></i> No barcode found in selected area</div>`;
+                }
+            });
+        }
+        
+        // Reset image upload
+        function resetImageUpload() {
+            // Hide preview
+            imagePreview.style.display = 'none';
+            
+            // Clear the file input
+            imageUpload.value = '';
+            
+            // Destroy cropper instance
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+            
+            // Clear the image
+            uploadedImage.src = '';
         }
     </script>
     <script>
