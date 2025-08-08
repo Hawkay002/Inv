@@ -4,15 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rent Invoice Generator</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#28a745">
+    <link rel="manifest" href="manifest.json"><meta name="theme-color" content="#28a745">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
-    <!-- Cropper.js for image cropping -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
     <style>
@@ -22,6 +20,9 @@
             --text-secondary: #555555;
             --accent-blue: #28a745;
             --border-color: #dddddd;
+            --btn-export-json: #6610f2;
+            --btn-import-json: #fd7e14;
+            --btn-delete-selected: #dc3545;
         }
 
         * {
@@ -32,14 +33,14 @@
         }
 
         body {
-            background: var(--bg-primary);
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4efe9 100%);
             color: var(--text-primary);
             min-height: 100vh;
             padding: 20px;
         }
 
         .container {
-            max-width: 800px;
+            max-width: 100%;
             margin: 0 auto;
             padding: 20px;
         }
@@ -47,16 +48,23 @@
         header {
             text-align: center;
             margin-bottom: 20px;
-            padding: 15px;
+            padding: 20px;
             background: white;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            position: relative;
+            border-top: 5px solid var(--accent-blue);
+            border-bottom: 5px solid var(--accent-blue);
         }
 
         h1 {
             font-size: 1.8rem;
             margin-bottom: 10px;
             color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
 
         .subtitle {
@@ -119,11 +127,12 @@
             margin-bottom: 8px;
             color: var(--text-secondary);
             font-size: 0.9rem;
+            font-weight: 500;
         }
 
         input {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             background: white;
             border: 1px solid var(--border-color);
             border-radius: 4px;
@@ -159,16 +168,21 @@
             color: var(--text-secondary);
             font-size: 0.85rem;
             margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .auto-fill-value {
             font-size: 1rem;
             color: var(--text-primary);
-            padding: 8px;
+            padding: 10px;
             background: white;
             border-radius: 4px;
-            min-height: 38px;
+            min-height: 40px;
             border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
         }
 
         .edit-icon {
@@ -199,11 +213,13 @@
             cursor: pointer;
             transition: all 0.3s ease;
             text-align: center;
+            width: 100%;
         }
 
         .btn:hover {
             background: #0069d9;
             transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
         }
 
         .btn:active {
@@ -248,20 +264,21 @@
 
         .modal-content {
             background: white;
-            border-radius: 5px;
+            border-radius: 10px;
             width: 100%;
-            max-width: 500px;
-            padding: 20px;
+            max-width: 600px;
+            padding: 25px;
             position: relative;
             max-height: 90vh;
             overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
 
         .close-modal {
             position: absolute;
-            top: 0px;
+            top: 10px;
             right: 15px;
-            font-size: 3rem;
+            font-size: 2.5rem;
             color: #555;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -294,11 +311,16 @@
         .bill-title {
             font-size: 1.3rem;
             margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
 
         .bill-date {
             color: var(--text-secondary);
             font-size: 0.9rem;
+            margin-top: 5px;
         }
 
         .bill-status {
@@ -340,6 +362,9 @@
         .bill-section h3 {
             margin-bottom: 8px;
             font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .bill-section p {
@@ -347,6 +372,9 @@
             color: #555;
             font-size: 0.9rem;
             margin-bottom: 0 !important;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .bill-readings {
@@ -416,6 +444,9 @@
         
         .bill-charge-service {
             margin-bottom: 2px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
         
         .bill-charge-details {
@@ -441,6 +472,7 @@
             background: #28a745;
             border-radius: 4px;
             padding: 10px;
+            color: black;
         }
         
         /* QR Code Section */
@@ -541,7 +573,7 @@
 
         .bill-card {
             background: white;
-            border-radius: 5px;
+            border-radius: 8px;
             padding: 15px;
             border: 1px solid var(--border-color);
             transition: all 0.3s ease;
@@ -555,6 +587,7 @@
         .bill-card:hover {
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             border-color: var(--accent-blue);
+            transform: translateY(-3px);
         }
 
         .bill-card-header {
@@ -598,6 +631,9 @@
             font-size: 0.85rem;
             color: var(--text-secondary);
             margin-bottom: 2px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
         .bill-card-value {
@@ -628,6 +664,9 @@
             font-size: 0.8rem;
             color: #28a745;
             margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
         
         .bill-card-actions {
@@ -653,6 +692,7 @@
         .edit-btn {
             background: rgba(0,123,255,0.1);
             color: var(--accent-blue);
+            display: none;
         }
         
         .delete-btn {
@@ -834,10 +874,13 @@
             background: #f9f9f9;
             border-radius: 5px;
             border: 1px solid var(--border-color);
+            flex-wrap: wrap;
+            gap: 10px;
         }
         
         .select-all {
-            display: flex;
+            position: relative;
+            left: 35%;
             align-items: center;
             gap: 8px;
         }
@@ -1020,6 +1063,73 @@
             right: -6px;
             cursor: se-resize;
         }
+        
+        /* New button styles */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 0;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+        
+        .btn-export-json {
+            background: var(--btn-export-json);
+        }
+        
+        .btn-export-json:hover {
+            background: #5300e0;
+        }
+        
+        .btn-import-json {
+            background: var(--btn-import-json);
+        }
+        
+        .btn-import-json:hover {
+            background: #e66b00;
+        }
+        
+        .btn-delete-selected {
+            background: var(--btn-delete-selected);
+        }
+        
+        .btn-delete-selected:hover {
+            background: #bd2130;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        /* Import/Export section */
+        .import-export-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .import-export-section h3 {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.1rem;
+        }
 
         @media (max-width: 768px) {
             .settings-group {
@@ -1079,28 +1189,14 @@
             .crop-controls {
                 flex-direction: column;
             }
-        }
-        
-        /* PDF Bill Preview */
-        .pdf-bill-preview {
-            width: 100%;
-            max-width: 700px;
-            margin: 0 auto;
-            padding: 20px;
-            background: white;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-        
-        /* PDF-specific styles */
-        .pdf-page {
-            width: 210mm;
-            height: 297mm;
-            padding: 20mm;
-            background: white;
-            box-shadow: 0 0 5px rgba(0,0,0,0.1);
-            position: absolute;
-            left: -9999px;
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .file-input-wrapper {
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -1112,7 +1208,7 @@
     
     <div class="container">
         <header>
-            <h1><i class="fas fa-file-invoice-dollar"></i> Rent & Utilities Invoice Generator</h1>
+            <h1 style="font-size: 1.5rem;"><i class="fas fa-file-invoice-dollar"></i> Rent & Utilities Invoice Generator</h1>
             <div class="subtitle">For House Owner - Mr. Shankar Debnath</div>
             <div class="header-actions">
                 <button class="btn btn-secondary" id="settingsBtn">
@@ -1188,9 +1284,24 @@
                     <input type="checkbox" id="selectAllBills">
                     <label for="selectAllBills">Select All</label>
                 </div>
-                <button id="exportPdfBtn" class="btn">
-                    <i class="fas fa-file-pdf"></i> Export Selected to PDF
+                <button id="exportPdfBtn" class="btn" style="margin-bottom: 0 !important;">
+                    <i class="fas fa-file-pdf"></i> Export to PDF
                 </button>
+                
+                <div class="action-buttons">
+                    <button id="exportJsonBtn" class="btn btn-export-json">
+                        <i class="fas fa-file-export"></i> Export as JSON
+                    </button>
+                    <div class="file-input-wrapper">
+                        <button id="importJsonBtn" class="btn btn-import-json" style="width: 100%;">
+                            <i class="fas fa-file-import"></i> Import from JSON
+                        </button>
+                        <input type="file" id="jsonFileInput" accept=".json">
+                    </div>
+                    <button id="deleteSelectedBtn" class="btn btn-delete-selected">
+                        <i class="fas fa-trash-alt"></i> Delete Selected
+                    </button>
+                </div>
             </div>
             
             <h2 style="margin-bottom: 15px;"><i class="fas fa-history"></i> Previous Bills</h2>
@@ -1622,6 +1733,10 @@
         const uploadedImage = document.getElementById('uploadedImage');
         const scanCroppedBtn = document.getElementById('scanCroppedBtn');
         const resetImageBtn = document.getElementById('resetImageBtn');
+        const exportJsonBtn = document.getElementById('exportJsonBtn');
+        const importJsonBtn = document.getElementById('importJsonBtn');
+        const jsonFileInput = document.getElementById('jsonFileInput');
+        const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
         
         // Application settings and bill data
         let settings = JSON.parse(localStorage.getItem('rentSettings')) || {
@@ -1684,6 +1799,11 @@
             imageUpload.addEventListener('change', handleImageUpload);
             scanCroppedBtn.addEventListener('click', scanCroppedArea);
             resetImageBtn.addEventListener('click', resetImageUpload);
+            
+            // Import/Export JSON functionality
+            exportJsonBtn.addEventListener('click', exportSelectedBillsAsJSON);
+            jsonFileInput.addEventListener('change', importBillsFromJSON);
+            deleteSelectedBtn.addEventListener('click', deleteSelectedBills);
         });
         
         // Tab switching
@@ -2350,6 +2470,7 @@
                 };
                 
                 page.innerHTML = `
+                <div style="transform: scale(0.7);">
                     <div class="bill-header">
                         <h2 class="bill-title">
                             <i class="fas fa-file-invoice"></i> Rent & Utilities Invoice</h2>
@@ -2464,6 +2585,7 @@
                             <canvas id="pdfBillBarcode"></canvas>
                         </div>
                     </div>
+                </div>
                 `;
                 
                 // Generate QR and barcode for PDF
@@ -2815,6 +2937,151 @@
             
             // Clear the image
             uploadedImage.src = '';
+        }
+        
+        // Export selected bills as JSON
+        function exportSelectedBillsAsJSON() {
+            // Get selected bills
+            const selectedCheckboxes = document.querySelectorAll('.bill-checkbox:checked');
+            
+            if (selectedCheckboxes.length === 0) {
+                alert('Please select at least one bill to export');
+                return;
+            }
+            
+            // Get selected bill IDs
+            const selectedIds = Array.from(selectedCheckboxes).map(checkbox => parseInt(checkbox.getAttribute('data-id')));
+            
+            // Get selected bills
+            const selectedBills = bills.filter(bill => selectedIds.includes(bill.id));
+            
+            if (selectedBills.length === 0) {
+                alert('No bills selected for export');
+                return;
+            }
+            
+            // Create JSON string
+            const jsonStr = JSON.stringify(selectedBills, null, 2);
+            
+            // Create blob and download
+            const blob = new Blob([jsonStr], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            
+            // Create filename with date
+            const now = new Date();
+            const dateStr = now.toISOString().slice(0, 10);
+            const fileName = `rent-bills-${dateStr}.json`;
+            
+            // Create temporary link
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            
+            // Clean up
+            setTimeout(() => {
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }, 100);
+            
+            alert(`Exported ${selectedBills.length} bills as JSON file`);
+        }
+        
+        // Import bills from JSON file
+        function importBillsFromJSON(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    const importedBills = JSON.parse(e.target.result);
+                    
+                    // Validate imported bills format
+                    if (!Array.isArray(importedBills)) {
+                        throw new Error('Invalid JSON format. Expected an array of bills.');
+                    }
+                    
+                    // Validate each bill has required properties
+                    const requiredProps = ['id', 'date', 'prevElectricity', 'currElectricity', 'prevAC', 'currAC', 'total'];
+                    for (const bill of importedBills) {
+                        for (const prop of requiredProps) {
+                            if (!(prop in bill)) {
+                                throw new Error(`Invalid bill format. Missing property: ${prop}`);
+                            }
+                        }
+                    }
+                    
+                    // Merge with existing bills
+                    const existingIds = new Set(bills.map(b => b.id));
+                    let addedCount = 0;
+                    
+                    for (const bill of importedBills) {
+                        // Only add if not already present
+                        if (!existingIds.has(bill.id)) {
+                            bills.push(bill);
+                            existingIds.add(bill.id);
+                            addedCount++;
+                        }
+                    }
+                    
+                    // Sort bills by date (newest first)
+                    bills.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    
+                    // Save to localStorage
+                    localStorage.setItem('rentBills', JSON.stringify(bills));
+                    
+                    // Update UI
+                    loadPreviousBills();
+                    
+                    // Reset file input
+                    jsonFileInput.value = '';
+                    
+                    alert(`Successfully imported ${addedCount} bills. ${importedBills.length - addedCount} were duplicates and skipped.`);
+                    
+                } catch (error) {
+                    console.error('Error importing bills:', error);
+                    alert(`Error importing bills: ${error.message}`);
+                }
+            };
+            
+            reader.onerror = function() {
+                alert('Error reading file');
+            };
+            
+            reader.readAsText(file);
+        }
+        
+        // Delete selected bills
+        function deleteSelectedBills() {
+            // Get selected bills
+            const selectedCheckboxes = document.querySelectorAll('.bill-checkbox:checked');
+            
+            if (selectedCheckboxes.length === 0) {
+                alert('Please select at least one bill to delete');
+                return;
+            }
+            
+            if (!confirm(`Are you sure you want to delete ${selectedCheckboxes.length} selected bill(s)? This action cannot be undone.`)) {
+                return;
+            }
+            
+            // Get selected bill IDs
+            const selectedIds = Array.from(selectedCheckboxes).map(checkbox => parseInt(checkbox.getAttribute('data-id')));
+            
+            // Filter out selected bills
+            const originalCount = bills.length;
+            bills = bills.filter(bill => !selectedIds.includes(bill.id));
+            
+            // Save to localStorage
+            localStorage.setItem('rentBills', JSON.stringify(bills));
+            
+            // Update UI
+            loadPreviousBills();
+            
+            alert(`Deleted ${originalCount - bills.length} bill(s) successfully`);
         }
     </script>
     <script>
